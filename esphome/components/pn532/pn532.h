@@ -108,6 +108,7 @@ class PN532 : public PollingComponent {
   std::vector<nfc::NfcOnTagTrigger *> triggers_ontagremoved_;
   std::vector<uint8_t> current_uid_;
   std::vector<std::array<uint8_t, nfc::KEY_SIZE>> user_define_key;
+  std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>* raw_data;
   nfc::NdefMessage *next_task_message_to_write_;
   uint32_t rd_start_time_{0};
   enum PN532ReadReady rd_ready_ { WOULDBLOCK };

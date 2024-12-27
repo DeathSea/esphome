@@ -429,6 +429,7 @@ void PN532::write_mode(nfc::NdefMessage *message) {
 void PN532::read_by_auth_mode(const std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key, std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>* data) {
   this->next_task_ = READ_BY_AUTH;
   this->user_define_key.assign(user_key.begin(), user_key.end());
+  this->raw_data = data;
   auto raw_data_read = this->read_data_auth_(this->current_uid_);
   data->assign((*raw_data_read).begin(), (*raw_data_read).end());
   ESP_LOGD(TAG, "Waiting to read next card");
