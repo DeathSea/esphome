@@ -262,16 +262,16 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
     std::vector<uint8_t> &uid) {
   uint8_t current_block = 0;
 
-  if (user_define_key.empty()) {
+  if (user_define_key_.empty()) {
     return std::make_shared<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>>();
   }
 
   auto get_key = [this](uint8_t block) -> std::array<uint8_t, nfc::KEY_SIZE> {
     uint8_t current_key_index = block / 4;
-    if (current_key_index >= user_define_key.size()) {
+    if (current_key_index >= user_define_key_.size()) {
       return {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     }
-    return user_define_key[current_key_index];
+    return user_define_key_[current_key_index];
   };
 
   std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>> buffer;
@@ -280,7 +280,7 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
   // because the first read (read_mifare_classic_tag_ function) is auth failed
   // the card will refuse to auth other block,
   // must release and re read the card id
-  this->in_release(0x00);
+  this->in_release_(0x00);
   if (!this->write_command_({
           PN532_COMMAND_INLISTPASSIVETARGET,  // read passive target ID
           0x01,                               // max 1 card
