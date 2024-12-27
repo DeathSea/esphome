@@ -258,8 +258,8 @@ bool PN532::write_mifare_classic_tag_(std::vector<uint8_t> &uid, nfc::NdefMessag
   return true;
 }
 
-
 std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> PN532::read_mifare_classic_data_(std::vector<uint8_t> &uid) {
+
   uint8_t current_block = 0;
 
   if (user_define_key.empty()) {
@@ -267,7 +267,7 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
   }
 
   auto get_key = [this](uint8_t block)->std::array<uint8_t, nfc::KEY_SIZE> {
-    uint8_t current_key_index = block % 4;
+    uint8_t current_key_index = block / 4;
     if (current_key_index >= user_define_key.size()) {
       return {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     }
@@ -275,31 +275,40 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
   };
 
   std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>> buffer;
+  bool auth = false;
 
-  while (current_block < nfc::MIFARE_ULTRALIGHT_MAX_PAGE) {
+  // because the first read (read_mifare_classic_tag_ function) is auth failed
+  // the card will refuse to auth other block,
+  // must release and re read the card id
+  this->in_release(0x00);
+  if (!this->write_command_({
+          PN532_COMMAND_INLISTPASSIVETARGET, // read passive target ID
+          0x01,  // max 1 card
+          0x00,  // baud rate ISO14443A (106 kbit/s)
+      })) {
+    ESP_LOGE(TAG, "ERROR in re read card");
+    return std::make_shared<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>>();
+  }
+  std::vector<uint8_t> _;
+  this->read_response(PN532_COMMAND_INLISTPASSIVETARGET, _);
+
+  while (current_block <= nfc::MIFARE_ULTRALIGHT_MAX_PAGE) {
     if (nfc::mifare_classic_is_first_block(current_block)) {
-      if (!this->auth_mifare_classic_block_(uid, current_block, nfc::MIFARE_CMD_AUTH_A, get_key(current_block).data())) {
-        ESP_LOGE(TAG, "Error, Block authentication failed for %d", current_block);
-      }
+      auth = false;
+    }
+    if (!auth) {
+      auth = this->auth_mifare_classic_block_(uid, current_block, nfc::MIFARE_CMD_AUTH_B, get_key(current_block).data());
     }
     std::vector<uint8_t> block_data;
-    if (this->read_mifare_classic_block_(current_block, block_data)) {
+    if (auth && this->read_mifare_classic_block_(current_block, block_data)) {
       std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE> array_block_data;
-      uint8_t i = 0;
-      for (; (i < nfc::MIFARE_CLASSIC_BLOCK_SIZE) && (i < block_data.size()); ++i) {
-        array_block_data[i] = block_data[i];
-      }
+      memcpy(array_block_data.data(), block_data.data(), block_data.size());
       buffer.push_back(array_block_data);
-    } else {
-      ESP_LOGE(TAG, "Error reading block %d", current_block);
     }
 
     current_block++;
-
-    if (nfc::mifare_classic_is_trailer_block(current_block)) {
-      current_block++;
-    }
   }
+  ESP_LOGE(TAG, "reading buffer size %d", buffer.size());
 
   return std::make_shared<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>>(buffer);
 }

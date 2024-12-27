@@ -18,6 +18,7 @@ static const uint8_t PN532_COMMAND_SAMCONFIGURATION = 0x14;
 static const uint8_t PN532_COMMAND_RFCONFIGURATION = 0x32;
 static const uint8_t PN532_COMMAND_INDATAEXCHANGE = 0x40;
 static const uint8_t PN532_COMMAND_INLISTPASSIVETARGET = 0x4A;
+static const uint8_t PN532_COMMAND_INRELEASE = 0x52;
 static const uint8_t PN532_COMMAND_POWERDOWN = 0x16;
 
 enum PN532ReadReady {
@@ -55,7 +56,7 @@ class PN532 : public PollingComponent {
   void format_mode();
   void write_mode(nfc::NdefMessage *message);
   bool powerdown();
-  void read_by_auth_mode(std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key, std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> data);
+  void read_by_auth_mode(const std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key, std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>> *data);
 
  protected:
   void turn_off_rf_();
@@ -71,6 +72,8 @@ class PN532 : public PollingComponent {
   virtual bool read_response(uint8_t command, std::vector<uint8_t> &data) = 0;
 
   std::unique_ptr<nfc::NfcTag> read_tag_(std::vector<uint8_t> &uid);
+
+  void in_release(const uint8_t target = 0x00);
 
   std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> read_data_auth_(std::vector<uint8_t> &uid);
 
@@ -105,7 +108,6 @@ class PN532 : public PollingComponent {
   std::vector<nfc::NfcOnTagTrigger *> triggers_ontagremoved_;
   std::vector<uint8_t> current_uid_;
   std::vector<std::array<uint8_t, nfc::KEY_SIZE>> user_define_key;
-  std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> raw_data;
   nfc::NdefMessage *next_task_message_to_write_;
   uint32_t rd_start_time_{0};
   enum PN532ReadReady rd_ready_ { WOULDBLOCK };

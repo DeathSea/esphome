@@ -238,8 +238,11 @@ void PN532::loop() {
     }
   } else if (next_task_ == READ_BY_AUTH) {
     // read raw data
+    ESP_LOGD(TAG, "next task read by auth %d", nfcid.size());
     auto data = this->read_data_auth_(nfcid);
-    this->raw_data.swap(data);
+    if (this->raw_data != nullptr) {
+      this->raw_data->assign((*data).begin(), (*data).end());
+    }
     this->user_define_key.clear();
   }
 
@@ -362,6 +365,16 @@ void PN532::turn_off_rf_() {
   });
 }
 
+void PN532::in_release(const uint8_t target) {
+  this->write_command_({
+      PN532_COMMAND_INRELEASE,
+      target,
+  });
+
+  std::vector<uint8_t> data;
+  this->read_data(data, 3);
+}
+
 std::unique_ptr<nfc::NfcTag> PN532::read_tag_(std::vector<uint8_t> &uid) {
   uint8_t type = nfc::guess_tag_type(uid.size());
 
@@ -413,10 +426,11 @@ void PN532::write_mode(nfc::NdefMessage *message) {
   this->next_task_message_to_write_ = message;
   ESP_LOGD(TAG, "Waiting to write next tag");
 }
-void PN532::read_by_auth_mode(std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key, std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> data) {
+void PN532::read_by_auth_mode(const std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key, std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>* data) {
   this->next_task_ = READ_BY_AUTH;
   this->user_define_key.assign(user_key.begin(), user_key.end());
-  this->raw_data = data;
+  auto raw_data_read = this->read_data_auth_(this->current_uid_);
+  data->assign((*raw_data_read).begin(), (*raw_data_read).end());
   ESP_LOGD(TAG, "Waiting to read next card");
 }
 
