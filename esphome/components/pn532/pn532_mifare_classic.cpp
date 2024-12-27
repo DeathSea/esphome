@@ -258,15 +258,15 @@ bool PN532::write_mifare_classic_tag_(std::vector<uint8_t> &uid, nfc::NdefMessag
   return true;
 }
 
-std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> PN532::read_mifare_classic_data_(std::vector<uint8_t> &uid) {
-
+std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> PN532::read_mifare_classic_data_(
+    std::vector<uint8_t> &uid) {
   uint8_t current_block = 0;
 
   if (user_define_key.empty()) {
     return std::make_shared<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>>();
   }
 
-  auto get_key = [this](uint8_t block)->std::array<uint8_t, nfc::KEY_SIZE> {
+  auto get_key = [this](uint8_t block) -> std::array<uint8_t, nfc::KEY_SIZE> {
     uint8_t current_key_index = block / 4;
     if (current_key_index >= user_define_key.size()) {
       return {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -282,9 +282,9 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
   // must release and re read the card id
   this->in_release(0x00);
   if (!this->write_command_({
-          PN532_COMMAND_INLISTPASSIVETARGET, // read passive target ID
-          0x01,  // max 1 card
-          0x00,  // baud rate ISO14443A (106 kbit/s)
+          PN532_COMMAND_INLISTPASSIVETARGET,  // read passive target ID
+          0x01,                               // max 1 card
+          0x00,                               // baud rate ISO14443A (106 kbit/s)
       })) {
     ESP_LOGE(TAG, "ERROR in re read card");
     return std::make_shared<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>>();
@@ -297,7 +297,8 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
       auth = false;
     }
     if (!auth) {
-      auth = this->auth_mifare_classic_block_(uid, current_block, nfc::MIFARE_CMD_AUTH_B, get_key(current_block).data());
+      auth =
+          this->auth_mifare_classic_block_(uid, current_block, nfc::MIFARE_CMD_AUTH_B, get_key(current_block).data());
     }
     std::vector<uint8_t> block_data;
     if (auth && this->read_mifare_classic_block_(current_block, block_data)) {
@@ -312,7 +313,6 @@ std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>
 
   return std::make_shared<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>>(buffer);
 }
-
 
 }  // namespace pn532
 }  // namespace esphome

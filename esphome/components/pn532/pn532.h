@@ -56,7 +56,8 @@ class PN532 : public PollingComponent {
   void format_mode();
   void write_mode(nfc::NdefMessage *message);
   bool powerdown();
-  void read_by_auth_mode(const std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key, std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>> *data);
+  void read_by_auth_mode(const std::vector<std::array<uint8_t, nfc::KEY_SIZE>> &user_key,
+                         std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>> *data);
 
  protected:
   void turn_off_rf_();
@@ -75,7 +76,8 @@ class PN532 : public PollingComponent {
 
   void in_release(const uint8_t target = 0x00);
 
-  std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> read_data_auth_(std::vector<uint8_t> &uid);
+  std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> read_data_auth_(
+      std::vector<uint8_t> &uid);
 
   bool format_tag_(std::vector<uint8_t> &uid);
   bool clean_tag_(std::vector<uint8_t> &uid);
@@ -99,7 +101,8 @@ class PN532 : public PollingComponent {
   bool write_mifare_ultralight_tag_(std::vector<uint8_t> &uid, nfc::NdefMessage *message);
   bool clean_mifare_ultralight_();
 
-  std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> read_mifare_classic_data_(std::vector<uint8_t> &uid);
+  std::shared_ptr<std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>> read_mifare_classic_data_(
+      std::vector<uint8_t> &uid);
 
   bool updates_enabled_{true};
   bool requested_read_{false};
@@ -108,7 +111,7 @@ class PN532 : public PollingComponent {
   std::vector<nfc::NfcOnTagTrigger *> triggers_ontagremoved_;
   std::vector<uint8_t> current_uid_;
   std::vector<std::array<uint8_t, nfc::KEY_SIZE>> user_define_key;
-  std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>>* raw_data;
+  std::vector<std::array<uint8_t, nfc::MIFARE_CLASSIC_BLOCK_SIZE>> *raw_data;
   nfc::NdefMessage *next_task_message_to_write_;
   uint32_t rd_start_time_{0};
   enum PN532ReadReady rd_ready_ { WOULDBLOCK };
